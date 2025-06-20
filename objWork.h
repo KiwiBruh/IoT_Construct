@@ -41,13 +41,11 @@ struct Quadric {
 
 	Quadric() : A(Matrix4f::Zero()) {}
 
-	// Добавляем плоскость в квадрику
 	void addPlane(const Plane& p) {
 		Vector4f v(p.a, p.b, p.c, p.d);
 		A += v * v.transpose();
 	}
 
-	// Объединяем квадрики
 	void merge(const Quadric& other) {
 		A += other.A;
 	}
@@ -82,7 +80,6 @@ float QError(const Vertex& v, const vec3& new_pos) {
 	return error;
 }
 
-// Вычисляет уравнение плоскости по трём точкам
 Plane computePlane(const vec3& a, const vec3& b, const vec3& c) {
 	vec3 ab = { b.x - a.x, b.y - a.y, b.z - a.z };
 	vec3 ac = { c.x - a.x, c.y - a.y, c.z - a.z };
@@ -101,29 +98,28 @@ Plane computePlane(const vec3& a, const vec3& b, const vec3& c) {
 	return { normal.x, normal.y, normal.z, -(normal.x * a.x + normal.y * a.y + normal.z * a.z) };
 }
 
-// Вычисляет оптимальную позицию для новой вершины при схлопывании
+
 vec3 computeOptimalPosQEM(const Vertex& v1, const Vertex& v2) {
-	// Объединённая квадрика
+
 	Quadric Q = v1.q;
 	Q.merge(v2.q);
 
-	// Создаём систему уравнений для нахождения оптимальной позиции
+
 	Matrix4f A = Q.A;
 
-	// Фиксируем последнюю строку для решения [v_new, 1]
 	A.row(3) << 0, 0, 0, 1;
 
-	Vector4f b(0, 0, 0, 1); // Правая часть: [0, 0, 0, 1]
+	Vector4f b(0, 0, 0, 1); 
 
-	// Решаем систему A·x = b
+
 	Vector4f x = A.colPivHouseholderQr().solve(b);
 
-	// Если решение найдено, возвращаем новую позицию
+
 	if ((A * x - b).norm() < 1e-6) {
 		return { x(0), x(1), x(2) };
 	}
 
-	// Если система вырождена, возвращаем середину ребра
+	
 	return {
 		(v1.pos.x + v2.pos.x) * 0.5f,
 		(v1.pos.y + v2.pos.y) * 0.5f,
@@ -131,7 +127,7 @@ vec3 computeOptimalPosQEM(const Vertex& v1, const Vertex& v2) {
 	};
 }
 
-// Добавляет ребро в очередь
+
 void addEdgeToQueue(priority_queue<Edge>& queue, const vector<Vertex>& vertices,
 	const map<vec3, int>& pos_to_idx, const vec3& a, const vec3& b) {
 	int v1 = pos_to_idx.at(a);
@@ -150,7 +146,7 @@ void addEdgeToQueue(priority_queue<Edge>& queue, const vector<Vertex>& vertices,
 	queue.push(edge);
 }
 
-// Схлопывает ребро
+
 void collapseEdge(std::vector<Vertex>& vertices, const Edge& edge) {
 	vertices[edge.v1].pos = edge.new_pos;
 	vertices[edge.v1].planes.insert(vertices[edge.v1].planes.end(),
@@ -159,7 +155,7 @@ void collapseEdge(std::vector<Vertex>& vertices, const Edge& edge) {
 	vertices[edge.v2].valid = false; // Помечаем как удалённую
 }
 
-std::vector<trig> simplifyMesh(const std::vector<trig>& mesh, int target_tri_count) {
+std::vector<trig> simplifyMesh(const std::vector<trig>& mesh, double target_err) {
 	// 1. Собираем вершины и плоскости
 	std::vector<Vertex> vertices;
 	std::map<vec3, int> pos_to_idx;
@@ -188,7 +184,7 @@ std::vector<trig> simplifyMesh(const std::vector<trig>& mesh, int target_tri_cou
 	}
 
 	// 3. Схлопываем рёбра, пока не достигнем нужного количества полигонов
-	while (mesh.size() > target_tri_count && !edge_queue.empty()) {
+	while (edge_queue[0].cost > target_err && !edge_queue.empty()) {
 		Edge edge = edge_queue.top();
 		edge_queue.pop();
 
@@ -321,3 +317,4 @@ void appendObjFile(const string& destPath, const string& srcPath) {
 void addToScene(device sensor, const string& destPath) {
 	appendObjFile(const string & destPath, device.ObjPath);
 }
+
