@@ -34,7 +34,7 @@ struct Material {
 
 
 
-__host__ __device__ double dot(vec3 a, vec3 b) {//скалярное произведение
+__host__ __device__ double dot(vec3 a, vec3 b) {//СЃРєР°Р»СЏСЂРЅРѕРµ РїСЂРѕРёР·РІРµРґРµРЅРёРµ
 	return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
@@ -44,24 +44,24 @@ __host__ __device__ double dot(vec3 a, vec3 b) {//скалярное произведение
 | x2 y2 z2 |
 */
 
-__host__ __device__ vec3 prod(vec3 a, vec3 b) {//векторное произведение
+__host__ __device__ vec3 prod(vec3 a, vec3 b) {//РІРµРєС‚РѕСЂРЅРѕРµ РїСЂРѕРёР·РІРµРґРµРЅРёРµ
 	return { a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z,  a.x * b.y - a.y * b.x };
 }
 
-__host__ __device__ vec3 norm(vec3 v) {//нормировка
+__host__ __device__ vec3 norm(vec3 v) {//РЅРѕСЂРјРёСЂРѕРІРєР°
 	double l = sqrt(dot(v, v));
 	return { v.x / l, v.y / l, v.z / l };
 }
 
-__host__ __device__ vec3 diff(vec3 a, vec3 b) {//вычитание
+__host__ __device__ vec3 diff(vec3 a, vec3 b) {//РІС‹С‡РёС‚Р°РЅРёРµ
 	return { a.x - b.x, a.y - b.y, a.z - b.z };
 }
 
-__host__ __device__ vec3 add(vec3 a, vec3 b) {//сложение
+__host__ __device__ vec3 add(vec3 a, vec3 b) {//СЃР»РѕР¶РµРЅРёРµ
 	return { a.x + b.x, a.y + b.y, a.z + b.z };
 }
 
-__host__ __device__ vec3 mult(vec3 a, vec3 b, vec3 c, vec3 v) {//умножение a b c на вектор v
+__host__ __device__ vec3 mult(vec3 a, vec3 b, vec3 c, vec3 v) {//СѓРјРЅРѕР¶РµРЅРёРµ a b c РЅР° РІРµРєС‚РѕСЂ v
 	return { a.x * v.x + b.x * v.y + c.x * v.z,
 			a.y * v.x + b.y * v.y + c.y * v.z,
 			a.z * v.x + b.z * v.y + c.z * v.z };
@@ -73,11 +73,12 @@ void print(vec3 v) {
 
 
 
-struct trig {//один полигон
+struct trig {//РѕРґРёРЅ РїРѕР»РёРіРѕРЅ
 	vec3 a;
 	vec3 b;
 	vec3 c;
 	uchar4 color;
+	string object;
 };
 
 __host__ __device__ uchar4 incolor(vec3 color, float d = 1.0) {
@@ -87,9 +88,10 @@ __host__ __device__ uchar4 incolor(vec3 color, float d = 1.0) {
 
 
 struct device {
-	int type; //1 - датчик движения
+	int type; //1 - РґР°С‚С‡РёРє РґРІРёР¶РµРЅРёСЏ
 	int fov;
 	string ObjPath;
 	string MtlPath;
 	vec3 placement;
+	vec3 dir;
 };
