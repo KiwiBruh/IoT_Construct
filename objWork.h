@@ -293,7 +293,7 @@ vector<trig>> parseOBJ(const string& filePath, map<string, Material>& materials)
 		}
 	}
 	file.close();
-	simplifyMesh(trigs, ((int)(trigs.size()) / 2));
+	simplifyMesh(trigs, 0.7);
 	return trigs;
 }
 
