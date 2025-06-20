@@ -31,9 +31,9 @@ do {											                    \
 } while(0)
 
 
-// Плоскость (для QEM)
+// РџР»РѕСЃРєРѕСЃС‚СЊ (РґР»СЏ QEM)
 struct Plane {
-	double a, b, c, d; // Уравнение плоскости: ax + by + cz + d = 0
+	double a, b, c, d; // РЈСЂР°РІРЅРµРЅРёРµ РїР»РѕСЃРєРѕСЃС‚Рё: ax + by + cz + d = 0
 };
 
 struct Quadric {
@@ -41,13 +41,13 @@ struct Quadric {
 
 	Quadric() : A(Matrix4f::Zero()) {}
 
-	// Добавляем плоскость в квадрику
+	// Р”РѕР±Р°РІР»СЏРµРј РїР»РѕСЃРєРѕСЃС‚СЊ РІ РєРІР°РґСЂРёРєСѓ
 	void addPlane(const Plane& p) {
 		Vector4f v(p.a, p.b, p.c, p.d);
 		A += v * v.transpose();
 	}
 
-	// Объединяем квадрики
+	// РћР±СЉРµРґРёРЅСЏРµРј РєРІР°РґСЂРёРєРё
 	void merge(const Quadric& other) {
 		A += other.A;
 	}
@@ -55,18 +55,18 @@ struct Quadric {
 
 struct Vertex {
 	vec3 pos;
-	Quadric q; // QEM для вершины
+	Quadric q; // QEM РґР»СЏ РІРµСЂС€РёРЅС‹
 	bool
 
 
-// Ребро для схлопывания
+// Р РµР±СЂРѕ РґР»СЏ СЃС…Р»РѕРїС‹РІР°РЅРёСЏ
 struct Edge {
-	int v1, v2;       // Индексы вершин
-	double cost;       // Ошибка схлопывания
-	vec3 new_pos;     // Позиция новой вершины
+	int v1, v2;       // РРЅРґРµРєСЃС‹ РІРµСЂС€РёРЅ
+	double cost;       // РћС€РёР±РєР° СЃС…Р»РѕРїС‹РІР°РЅРёСЏ
+	vec3 new_pos;     // РџРѕР·РёС†РёСЏ РЅРѕРІРѕР№ РІРµСЂС€РёРЅС‹
 
 	bool operator<(const Edge& other) const {
-		return cost > other.cost; // Для min-heap
+		return cost > other.cost; // Р”Р»СЏ min-heap
 	}
 };
 
@@ -82,7 +82,7 @@ float QError(const Vertex& v, const vec3& new_pos) {
 	return error;
 }
 
-// Вычисляет уравнение плоскости по трём точкам
+// Р’С‹С‡РёСЃР»СЏРµС‚ СѓСЂР°РІРЅРµРЅРёРµ РїР»РѕСЃРєРѕСЃС‚Рё РїРѕ С‚СЂС‘Рј С‚РѕС‡РєР°Рј
 Plane computePlane(const vec3& a, const vec3& b, const vec3& c) {
 	vec3 ab = { b.x - a.x, b.y - a.y, b.z - a.z };
 	vec3 ac = { c.x - a.x, c.y - a.y, c.z - a.z };
@@ -101,29 +101,29 @@ Plane computePlane(const vec3& a, const vec3& b, const vec3& c) {
 	return { normal.x, normal.y, normal.z, -(normal.x * a.x + normal.y * a.y + normal.z * a.z) };
 }
 
-// Вычисляет оптимальную позицию для новой вершины при схлопывании
+// Р’С‹С‡РёСЃР»СЏРµС‚ РѕРїС‚РёРјР°Р»СЊРЅСѓСЋ РїРѕР·РёС†РёСЋ РґР»СЏ РЅРѕРІРѕР№ РІРµСЂС€РёРЅС‹ РїСЂРё СЃС…Р»РѕРїС‹РІР°РЅРёРё
 vec3 computeOptimalPosQEM(const Vertex& v1, const Vertex& v2) {
-	// Объединённая квадрика
+	// РћР±СЉРµРґРёРЅС‘РЅРЅР°СЏ РєРІР°РґСЂРёРєР°
 	Quadric Q = v1.q;
 	Q.merge(v2.q);
 
-	// Создаём систему уравнений для нахождения оптимальной позиции
+	// РЎРѕР·РґР°С‘Рј СЃРёСЃС‚РµРјСѓ СѓСЂР°РІРЅРµРЅРёР№ РґР»СЏ РЅР°С…РѕР¶РґРµРЅРёСЏ РѕРїС‚РёРјР°Р»СЊРЅРѕР№ РїРѕР·РёС†РёРё
 	Matrix4f A = Q.A;
 
-	// Фиксируем последнюю строку для решения [v_new, 1]
+	// Р¤РёРєСЃРёСЂСѓРµРј РїРѕСЃР»РµРґРЅСЋСЋ СЃС‚СЂРѕРєСѓ РґР»СЏ СЂРµС€РµРЅРёСЏ [v_new, 1]
 	A.row(3) << 0, 0, 0, 1;
 
-	Vector4f b(0, 0, 0, 1); // Правая часть: [0, 0, 0, 1]
+	Vector4f b(0, 0, 0, 1); // РџСЂР°РІР°СЏ С‡Р°СЃС‚СЊ: [0, 0, 0, 1]
 
-	// Решаем систему A·x = b
+	// Р РµС€Р°РµРј СЃРёСЃС‚РµРјСѓ AВ·x = b
 	Vector4f x = A.colPivHouseholderQr().solve(b);
 
-	// Если решение найдено, возвращаем новую позицию
+	// Р•СЃР»Рё СЂРµС€РµРЅРёРµ РЅР°Р№РґРµРЅРѕ, РІРѕР·РІСЂР°С‰Р°РµРј РЅРѕРІСѓСЋ РїРѕР·РёС†РёСЋ
 	if ((A * x - b).norm() < 1e-6) {
 		return { x(0), x(1), x(2) };
 	}
 
-	// Если система вырождена, возвращаем середину ребра
+	// Р•СЃР»Рё СЃРёСЃС‚РµРјР° РІС‹СЂРѕР¶РґРµРЅР°, РІРѕР·РІСЂР°С‰Р°РµРј СЃРµСЂРµРґРёРЅСѓ СЂРµР±СЂР°
 	return {
 		(v1.pos.x + v2.pos.x) * 0.5f,
 		(v1.pos.y + v2.pos.y) * 0.5f,
@@ -131,7 +131,7 @@ vec3 computeOptimalPosQEM(const Vertex& v1, const Vertex& v2) {
 	};
 }
 
-// Добавляет ребро в очередь
+// Р”РѕР±Р°РІР»СЏРµС‚ СЂРµР±СЂРѕ РІ РѕС‡РµСЂРµРґСЊ
 void addEdgeToQueue(priority_queue<Edge>& queue, const vector<Vertex>& vertices,
 	const map<vec3, int>& pos_to_idx, const vec3& a, const vec3& b) {
 	int v1 = pos_to_idx.at(a);
@@ -141,26 +141,26 @@ void addEdgeToQueue(priority_queue<Edge>& queue, const vector<Vertex>& vertices,
 	edge.v1 = v1;
 	edge.v2 = v2;
 
-	// Оптимальная позиция новой вершины (минимизируем QEM)
+	// РћРїС‚РёРјР°Р»СЊРЅР°СЏ РїРѕР·РёС†РёСЏ РЅРѕРІРѕР№ РІРµСЂС€РёРЅС‹ (РјРёРЅРёРјРёР·РёСЂСѓРµРј QEM)
 	edge.new_pos = computeOptimalPos(vertices[v1], vertices[v2]);
 
-	// Стоимость схлопывания
+	// РЎС‚РѕРёРјРѕСЃС‚СЊ СЃС…Р»РѕРїС‹РІР°РЅРёСЏ
 	edge.cost = QError(vertices[v1], edge.new_pos) + QError(vertices[v2], edge.new_pos);
 
 	queue.push(edge);
 }
 
-// Схлопывает ребро
+// РЎС…Р»РѕРїС‹РІР°РµС‚ СЂРµР±СЂРѕ
 void collapseEdge(std::vector<Vertex>& vertices, const Edge& edge) {
 	vertices[edge.v1].pos = edge.new_pos;
 	vertices[edge.v1].planes.insert(vertices[edge.v1].planes.end(),
 		vertices[edge.v2].planes.begin(),
 		vertices[edge.v2].planes.end());
-	vertices[edge.v2].valid = false; // Помечаем как удалённую
+	vertices[edge.v2].valid = false; // РџРѕРјРµС‡Р°РµРј РєР°Рє СѓРґР°Р»С‘РЅРЅСѓСЋ
 }
 
 std::vector<trig> simplifyMesh(const std::vector<trig>& mesh, int target_tri_count) {
-	// 1. Собираем вершины и плоскости
+	// 1. РЎРѕР±РёСЂР°РµРј РІРµСЂС€РёРЅС‹ Рё РїР»РѕСЃРєРѕСЃС‚Рё
 	std::vector<Vertex> vertices;
 	std::map<vec3, int> pos_to_idx;
 
@@ -178,7 +178,7 @@ std::vector<trig> simplifyMesh(const std::vector<trig>& mesh, int target_tri_cou
 		}
 	}
 
-	// 2. Строим приоритетную очередь рёбер
+	// 2. РЎС‚СЂРѕРёРј РїСЂРёРѕСЂРёС‚РµС‚РЅСѓСЋ РѕС‡РµСЂРµРґСЊ СЂС‘Р±РµСЂ
 	std::priority_queue<Edge> edge_queue;
 
 	for (const auto& tri : mesh) {
@@ -187,17 +187,16 @@ std::vector<trig> simplifyMesh(const std::vector<trig>& mesh, int target_tri_cou
 		addEdgeToQueue(edge_queue, vertices, pos_to_idx, tri.c, tri.a);
 	}
 
-	// 3. Схлопываем рёбра, пока не достигнем нужного количества полигонов
+	// 3. РЎС…Р»РѕРїС‹РІР°РµРј СЂС‘Р±СЂР°, РїРѕРєР° РЅРµ РґРѕСЃС‚РёРіРЅРµРј РЅСѓР¶РЅРѕРіРѕ РєРѕР»РёС‡РµСЃС‚РІР° РїРѕР»РёРіРѕРЅРѕРІ
 	while (mesh.size() > target_tri_count && !edge_queue.empty()) {
 		Edge edge = edge_queue.top();
 		edge_queue.pop();
 
-		// Схлопываем ребро (v1, v2) -> v_new
+		// РЎС…Р»РѕРїС‹РІР°РµРј СЂРµР±СЂРѕ (v1, v2) -> v_new
 		collapseEdge(vertices, edge);
 
 	}
 
-	// 4. Перестраиваем меш
 	return rebuildMesh(vertices);
 }
 
@@ -248,10 +247,12 @@ map<string, Material> parseMTL(const string& filePath) {
 	return materials;
 }
 
-vector<trig> parseOBJ(const string& filePath, map<string, Material>& materials) {
+vector<trig>> parseOBJ(const string& filePath, map<string, Material>& materials) {
 	vector<trig> trigs;
 	ifstream file(filePath);
 	string line;
+	string temp;
+	string object;
 	vector<vec3> vertices;
 	vector<string> faceMaterials;
 	string currentMaterial = "";
@@ -268,6 +269,14 @@ vector<trig> parseOBJ(const string& filePath, map<string, Material>& materials) 
 			iss >> currentVertice.y >> currentVertice.z >> currentVertice.x;
 			vertices.push_back(currentVertice);
 		}
+		else if (prefix == "#") {
+			temp = "";
+			iss >> temp;
+			if (temp == "object") {
+				iss >> object;
+				cout << object << endl;
+			}
+		}
 		else if (prefix == "usemtl") {
 			iss >> currentMaterial;
 		}
@@ -281,10 +290,10 @@ vector<trig> parseOBJ(const string& filePath, map<string, Material>& materials) 
 				}
 				if (trigs.empty() && face.empty())
 					firstIndex = std::stoi(vertex);
-				face.push_back(std::stoi(vertex) - firstIndex);
-				//face.push_back(std::stoi(vertex) - 1); // .obj использует 1-based индексы
+				//face.push_back(std::stoi(vertex) - firstIndex);
+				face.push_back(std::stoi(vertex) - 1); // .obj РёСЃРїРѕР»СЊР·СѓРµС‚ 1-based РёРЅРґРµРєСЃС‹
 			}
-			trigs.push_back({ vertices[face[0]] , vertices[face[1]], vertices[face[2]], materials[currentMaterial].color });
+			trigs.push_back({ vertices[face[0]] , vertices[face[1]], vertices[face[2]], materials[currentMaterial].color, object });
 		}
 	}
 	file.close();
@@ -312,4 +321,3 @@ void appendObjFile(const string& destPath, const string& srcPath) {
 void addToScene(device sensor, const string& destPath) {
 	appendObjFile(const string & destPath, device.ObjPath);
 }
-
