@@ -88,6 +88,76 @@ __host__ __device__ uchar4 ray(vec3 pos, vec3 dir, vec3 light_pos, vec3 light_co
 	return k_min_col;
 }
 
+__host__ __device__ bool check_visibility(vec3 sensor_pos, vec3 sensor_dir, double fov_angle, trig* trigs,
+	int total_trigs, const char* target_obj) {
+	int total_doors = 0;
+	int visible_doors = 0;
+	for (int i = 0; i < total_trigs; i++) {
+		if (strcmp(trigs[i].object, target_obj) == 0) {
+			total_doors++;
+		}
+	}
+
+	if (total_doors == 0) return true; // Р•СЃР»Рё РґРІРµСЂРµР№ РЅРµС‚, СЃС‡РёС‚Р°РµРј СЂР°Р·РјРµС‰РµРЅРёРµ С…РѕСЂРѕС€РёРј
+
+	int rays_per_dim = 10; 
+	double angle_step = fov_angle / (rays_per_dim - 1);
+
+	vec3 forward = norm(sensor_dir);
+	vec3 up = { 0.0, 0.0, 1.0 };
+	vec3 right = norm(prod(forward, up));
+	up = norm(prod(right, forward));
+
+	for (int i = 0; i < total_trigs; i++) {
+		if (strcmp(trigs[i].object, target_obj) != 0) continue;
+
+		vec3 tri_center = {
+			(trigs[i].a.x + trigs[i].b.x + trigs[i].c.x) / 3.0,
+			(trigs[i].a.y + trigs[i].b.y + trigs[i].c.y) / 3.0,
+			(trigs[i].a.z + trigs[i].b.z + trigs[i].c.z) / 3.0
+		};
+
+		vec3 to_tri = diff(tri_center, sensor_pos);
+		double dist_to_tri = length(to_tri);
+		vec3 dir_to_tri = norm(to_tri);
+
+		double angle = acos(dot(forward, dir_to_tri)) * 180.0 / M_PI;
+		if (angle > fov_angle / 2.0) continue;
+
+		bool is_visible = true;
+		for (int k = 0; k < total_trigs; k++) {
+			if (k == i) continue;
+
+			vec3 e1 = diff(trigs[k].b, trigs[k].a);
+			vec3 e2 = diff(trigs[k].c, trigs[k].a);
+			vec3 p = prod(dir_to_tri, e2);
+			double div = dot(p, e1);
+			if (fabs(div) < 1e-10) continue;
+
+			vec3 t = diff(sensor_pos, trigs[k].a);
+			double u = dot(p, t) / div;
+			if (u < 0.0 || u > 1.0) continue;
+
+			vec3 q = prod(t, e1);
+			double v = dot(q, dir_to_tri) / div;
+			if (v < 0.0 || v + u > 1.0) continue;
+
+			double ts = dot(q, e2) / div;
+			if (ts > 0.0 && ts < dist_to_tri) {
+				is_visible = false;
+				break;
+			}
+		}
+
+		if (is_visible) {
+			visible_doors++;
+		}
+	}
+
+	return (visible_doors * 5 >= total_doors);
+}
+
+
 
 __host__ __device__ void ssaa(uchar4* data, int w, int h, int ssaa_multiplier, uchar4* ssaa_data, int n, int m) {
 	int4 soften = { 0, 0, 0, 0 };
@@ -232,14 +302,25 @@ int main(int argc, char* argv[]) {
 	data = new uchar4[rays];
 	data_ssaa = new uchar4[rays];
 
-	device MotionSensor;//в будущем будет отдельная библиотека устройств
+	device MotionSensor;//РІ Р±СѓРґСѓС‰РµРј Р±СѓРґРµС‚ РѕС‚РґРµР»СЊРЅР°СЏ Р±РёР±Р»РёРѕС‚РµРєР° СѓСЃС‚СЂРѕР№СЃС‚РІ
 	MotionSensor.type = 1;
 	MotionSensor.fov = 180;
 	MotionSensor.ObjPath = "D:/diplom/smoke_detector.obj";
 	MotionSensor.MtlPath = "D:/diplom/smoke_detector.mtl";
 	MotionSensor.placement = (124,-29,118);
+	MotionSensor.dir = (124,-30,118);
 
-	addToScene(MotionSensor, "./Aparts/new3.obj" );
+	if(MotionSensor.type == 1){
+		bool good_placement = check_visibility(MotionSensor.placement, MotionSensor.dir, MotionSensor.fov, trigs,total_trigs, "door");
+
+		if (!good_placement) {
+			printf("bad placement\n");
+		}
+		else {
+			addToScene(MotionSensor, "./Aparts/new3.obj");
+		}
+	}
+
 
 
 	trigs_arr = trigs.data();
