@@ -184,7 +184,7 @@ std::vector<trig> simplifyMesh(const std::vector<trig>& mesh, double target_err)
 	}
 
 	// 3. Схлопываем рёбра, пока не достигнем нужного количества полигонов
-	while (edge_queue[0].cost > target_err && !edge_queue.empty()) {
+	while (edge_queue[0].cost < target_err && !edge_queue.empty()) {
 		Edge edge = edge_queue.top();
 		edge_queue.pop();
 
